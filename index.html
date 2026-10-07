@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In Phiếu Nhiệt A6 - Viettel Post</title>
+    <!-- Thư viện tạo mã vạch Barcode ngẫu nhiên -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #e9ecef;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        /* BẢNG ĐIỀU KHIỂN & BỘ NHẬP LIỆU */
+        .control-panel {
+            width: 360px;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .control-panel h2 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #ee0033;
+            border-bottom: 2px solid #ee0033;
+            padding-bottom: 6px;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #333;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            font-size: 13px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .form-group textarea {
+            resize: vertical;
+            height: 50px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-random {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-random:hover {
+            background-color: #5a6268;
+        }
+        .btn-print {
+            background-color: #ee0033;
+            color: white;
+        }
+        .btn-print:hover {
+            background-color: #cc002c;
+        }
+
+        /* PHIẾU IN KHỔ A6 (100mm x 150mm) */
+        .ticket-wrapper {
+            background: #fff;
+            padding: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .ticket {
+            width: 100mm;
+            min-height: 150mm;
+            background: #fff;
+            border: 1px solid #000;
+            padding: 8px;
+            box-sizing: border-box;
+            font-size: 12px;
+            color: #000;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+        }
+        .logo {
+            font-weight: bold;
+            font-size: 18px;
+            color: #ee0033;
+        }
+        .service-type {
+            font-weight: bold;
+            font-size: 12px;
+            text-align: right;
+        }
+        .barcode-section {
+            text-align: center;
+            margin: 6px 0;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 6px;
+        }
+        .barcode-section svg {
+            width: 85%;
+            height: 45px;
+        }
+        .tracking-number {
+            font-size: 15px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .route-info {
+            background-color: #f0f0f0;
+            padding: 4px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+            border: 1px solid #000;
+            margin-bottom: 6px;
+        }
+        .address-box {
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+            word-wrap: break-word;
+        }
+        .title {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 2px;
+        }
+        .phone {
+            font-weight: bold;
+        }
+        .product-info {
+            border: 1px solid #000;
+            padding: 5px;
+            margin-bottom: 5px;
+        }
+        .cod-box {
+            font-size: 13px;
+            font-weight: bold;
+            border: 2px solid #000;
+            padding: 5px;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .footer-note {
+            font-size: 10px;
+            font-style: italic;
+            text-align: center;
+            margin-top: 6px;
+            border-top: 1px dashed #000;
+            padding-top: 4px;
+        }
+
+        /* THIẾT LẬP KHI BẤM NÚT IN (CẤU HÌNH IN NHIỆT A6) */
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+                margin: 0;
+            }
+            .control-panel {
+                display: none !important; /* Ẩn toàn bộ form nhập liệu */
+            }
+            .ticket-wrapper {
+                box-shadow: none;
+            }
+            .ticket {
+                border: none;
+                width: 100mm;
+                height: 150mm;
+                page-break-after: always;
+            }
+            @page {
+                size: 100mm 150mm; /* Kích thước chuẩn giấy in nhiệt A6 */
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BẢNG ĐIỀU KHIỂN & NHẬP THÔNG TIN -->
+    <div class="control-panel">
+        <h2>NHẬP THÔNG TIN KHÁCH HÀNG</h2>
+        
+        <div class="form-group">
+            <label>Mã vận đơn (Hệ thống hoặc Random):</label>
+            <input type="text" id="inputTracking" value="154008361014">
+        </div>
+
+        <div class="form-group">
+            <label>Tên người nhận:</label>
+            <input type="text" id="inputName" value="Hoàng Văn Đình Vũ">
+        </div>
+
+        <div class="form-group">
+            <label>Số điện thoại:</label>
+            <input type="text" id="inputPhone" value="035463xxxx">
+        </div>
+
+        <div class="form-group">
+            <label>Địa chỉ nhận hàng:</label>
+            <textarea id="inputAddress">Ấp 1, X. Nha Bích, TX. Chơn Thành, T. Bình Phước</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Nội dung sản phẩm:</label>
+            <input type="text" id="inputProduct" value="1 x Nhang Đóng Gói">
+        </div>
+
+        <div class="form-group">
+            <label>Tiền thu hộ (COD):</label>
+            <input type="text" id="inputCOD" value="0 đ">
+        </div>
+
+        <div class="form-group">
+            <label>Ghi chú giao hàng:</label>
+            <input type="text" id="inputNote" value="KHÔNG XEM HÀNG">
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-random" onclick="generateRandomBill()">🔀 Random Mã</button>
+            <button class="btn btn-print" onclick="window.print()">🖨️ In Nhiệt A6</button>
+        </div>
+    </div>
+
+    <!-- PHIẾU IN NHIỆT A6 (HIỂN THỊ ĐỘNG) -->
+    <div class="ticket-wrapper">
+        <div class="ticket">
+            <!-- HEADER -->
+            <div class="header">
+                <div class="logo">VIETTEL POST</div>
+                <div class="service-type">
+                    TIẾT KIỆM / NỘI MIỀN<br>
+                    <small>Trọng lượng: 3.4 Kg</small>
+                </div>
+            </div>
+
+            <!-- MÃ VẠCH (BARCODE) -->
+            <div class="barcode-section">
+                <svg id="barcode"></svg>
+                <div class="tracking-number">Mã vận đơn: <span id="displayTracking">154008361014</span></div>
+            </div>
+
+            <!-- LUỒNG BƯU CỤC -->
+            <div class="route-info">
+                HUBBPC - / - HBBPMH - 016 <br>
+                BC Minh Hưng - BPC
+            </div>
+
+            <!-- NGƯỜI GỬI -->
+            <div class="address-box">
+                <div class="title">Từ (Người gửi):</div>
+                <div><strong>Thượng Phương</strong> - <span class="phone">094****553</span></div>
+                <div>25H Đường số 6, KP 6, P. Hiệp Bình Phước, TP. Thủ Đức, TP. Hồ Chí Minh</div>
+            </div>
+
+            <!-- NGƯỜI NHẬN -->
+            <div class="address-box" style="border-bottom: 2px solid #000;">
+                <div class="title">Đến (Người nhận):</div>
+                <div><strong id="displayName">Hoàng Văn Đình Vũ</strong> - <span class="phone" id="displayPhone">035463xxxx</span></div>
+                <div style="font-size: 13px; font-weight: bold; margin-top: 2px;" id="displayAddress">
+                    Ấp 1, X. Nha Bích, TX. Chơn Thành, T. Bình Phước
+                </div>
+            </div>
+
+            <!-- HÀNG HÓA -->
+            <div class="product-info">
+                <div class="title">Nội dung hàng hóa:</div>
+                <div id="displayProduct">• 1 x Nhang Đóng Gói</div>
+                <div style="margin-top: 4px;"><strong>Ghi chú:</strong> <span id="displayNote">KHÔNG XEM HÀNG</span></div>
+            </div>
+
+            <!-- COD -->
+            <div class="cod-box">
+                TIỀN THU HỘ (COD): <span id="displayCOD">0 đ</span>
+            </div>
+
+            <!-- FOOTER -->
+            <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px;">
+                <div>Chữ ký người nhận</div>
+            </div>
+
+            <div class="footer-note">
+                Cảm ơn quý khách đã sử dụng dịch vụ ViettelPost!
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT XỬ LÝ SỰ KIỆN -->
+    <script>
+        // Cập nhật Mã Vạch (Barcode)
+        function updateBarcode(code) {
+            try {
+                JsBarcode("#barcode", code, {
+                    format: "CODE128",
+                    lineColor: "#000",
+                    width: 2,
+                    height: 45,
+                    displayValue: false
+                });
+            } catch (e) {
+                console.error("Lỗi tạo barcode: ", e);
+            }
+        }
+
+        // Lắng nghe thay đổi từ các ô Input và cập nhật sang Phiếu in
+        document.getElementById('inputTracking').addEventListener('input', function(e) {
+            document.getElementById('displayTracking').innerText = e.target.value;
+            updateBarcode(e.target.value);
+        });
+
+        document.getElementById('inputName').addEventListener('input', function(e) {
+            document.getElementById('displayName').innerText = e.target.value;
+        });
+
+        document.getElementById('inputPhone').addEventListener('input', function(e) {
+            document.getElementById('displayPhone').innerText = e.target.value;
+        });
+
+        document.getElementById('inputAddress').addEventListener('input', function(e) {
+            document.getElementById('displayAddress').innerText = e.target.value;
+        });
+
+        document.getElementById('inputProduct').addEventListener('input', function(e) {
+            document.getElementById('displayProduct').innerText = '• ' + e.target.value;
+        });
+
+        document.getElementById('inputCOD').addEventListener('input', function(e) {
+            document.getElementById('displayCOD').innerText = e.target.value;
+        });
+
+        document.getElementById('inputNote').addEventListener('input', function(e) {
+            document.getElementById('displayNote').innerText = e.target.value;
+        });
+
+        // Hàm Tạo Ngẫu Nhiên Mã Vận Đơn (Dạng 12 chữ số)
+        function generateRandomBill() {
+            const prefix = "154";
+            const randomDigits = Math.floor(100000000 + Math.random() * 900000000);
+            const newCode = prefix + randomDigits;
+            
+            document.getElementById('inputTracking').value = newCode;
+            document.getElementById('displayTracking').innerText = newCode;
+            updateBarcode(newCode);
+        }
+
+        // Khởi tạo mã vạch ban đầu khi mở trang
+        updateBarcode(document.getElementById('inputTracking').value);
+    </script>
+</body>
+</html>
